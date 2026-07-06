@@ -95,3 +95,50 @@ class User(UserMixin, db.Model):
     @property
     def is_active(self):
         return self.status == 'active'
+
+
+class Trek(db.Model):
+    __tablename__ = 'treks'
+    id = db.Column(db.Integer, primary_key=True)
+    name = db.Column(db.String(200), nullable=False)
+    location = db.Column(db.String(200), nullable=False)
+    description = db.Column(db.Text)
+    difficulty = db.Column(db.String(20), nullable=False)  # Easy, Moderate, Hard
+    duration_days = db.Column(db.Integer, nullable=False)
+    total_slots = db.Column(db.Integer, nullable=False)
+    available_slots = db.Column(db.Integer, nullable=False)
+    price = db.Column(db.Float, default=0.0)
+    altitude = db.Column(db.String(50))
+    status = db.Column(db.String(20), default='Pending')  # Pending, Approved, Open, Closed, Completed
+    start_date = db.Column(db.Date)
+    end_date = db.Column(db.Date)
+    staff_id = db.Column(db.Integer, db.ForeignKey('staff.id'), nullable=True)
+    created_at = db.Column(db.DateTime, default=datetime.utcnow)
+    updated_at = db.Column(db.DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
+
+    # Relationships
+    bookings = db.relationship('Booking', backref='trek', lazy=True)
+
+    @property
+    def booked_slots(self):
+        return self.total_slots - self.available_slots
+
+    @property
+    def completion_percent(self):
+        if self.total_slots == 0:
+            return 0
+        return int((self.booked_slots / self.total_slots) * 100)
+
+
+class Booking(db.Model):
+    __tablename__ = 'bookings'
+    __table_args__ = (db.UniqueConstraint('user_id','trek_id',name='unique_user_booking'),)
+    id = db.Column(db.Integer, primary_key=True)
+    user_id = db.Column(db.Integer, db.ForeignKey('users.id'), nullable=False)
+    trek_id = db.Column(db.Integer, db.ForeignKey('treks.id'), nullable=False)
+    booking_date = db.Column(db.DateTime, default=datetime.utcnow)
+    status = db.Column(db.String(20), default='Booked')  # Booked, Cancelled, Completed
+    num_participants = db.Column(db.Integer, default=1)
+    special_requirements = db.Column(db.Text)
+    notes = db.Column(db.Text)
+    updated_at = db.Column(db.DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
