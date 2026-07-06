@@ -69,3 +69,17 @@ def treks():
     all_staff = Staff.query.filter_by(status='active').all()
     return render_template('admin/treks.html', treks=treks, staff_list=all_staff,
                            search=search, difficulty=difficulty, status=status)
+
+@admin_bp.route('/staff')
+@login_required
+@admin_required
+def staff():
+    search = request.args.get('search', '').strip()
+    #query = Staff.query.filter_by(status='active')
+    query = Staff.query
+    if search:
+        query = query.filter(
+            Staff.name.ilike(f'%{search}%') | Staff.username.ilike(f'%{search}%')
+        )
+    staff_list = query.order_by(Staff.created_at.desc()).all()
+    return render_template('admin/staff.html', staff_list=staff_list, search=search)
