@@ -1,0 +1,262 @@
+{% extends "base.html" %}
+{% block title %}Admin Dashboard{% endblock %}
+{% block content %}
+<div class="main-content">
+    <!-- Page Header -->
+    <div class="page-header d-flex justify-content-between align-items-center">
+        <div>
+            <h2><i class="bi bi-speedometer2 me-2" style="color:var(--sage)"></i>Admin Dashboard</h2>
+            <nav aria-label="breadcrumb">
+                <ol class="breadcrumb">
+                    <li class="breadcrumb-item active">Overview</li>
+                </ol>
+            </nav>
+        </div>
+        <div class="d-flex gap-2">
+            <a href="{{ url_for('admin.add_trek') }}" class="btn btn-forest btn-sm">
+                <i class="bi bi-plus-lg me-1"></i>New Trek
+            </a>
+        </div>
+    </div>
+
+    <!-- All Counts -->
+    <div class="row g-3 mb-4">
+        <div class="col-6 col-lg-3">
+            <div class="stat-card forest">
+                <div class="stat-num">{{ total_treks }}</div>
+                <div class="stat-label">Total Treks</div>
+                <i class="bi bi-map stat-icon"></i>
+            </div>
+        </div>
+        <div class="col-6 col-lg-3">
+            <div class="stat-card sage">
+                <div class="stat-num">{{ total_users }}</div>
+                <div class="stat-label">Trekkers</div>
+                <i class="bi bi-people stat-icon"></i>
+            </div>
+        </div>
+        <div class="col-6 col-lg-3">
+            <div class="stat-card gold">
+                <div class="stat-num">{{ total_staff }}</div>
+                <div class="stat-label">Staff Members</div>
+                <i class="bi bi-person-badge stat-icon"></i>
+            </div>
+        </div>
+        <div class="col-6 col-lg-3">
+            <div class="stat-card ember">
+                <div class="stat-num">{{ total_bookings }}</div>
+                <div class="stat-label">Total Bookings</div>
+                <i class="bi bi-journal-check stat-icon"></i>
+            </div>
+        </div>
+    </div>
+
+    <div class="row g-3">
+        <!-- Trek Status Breakdown -->
+        <div class="col-lg-5">
+            <div class="card h-100">
+                <div class="card-header d-flex justify-content-between align-items-center">
+                    <h6 class="mb-0" style="font-family:'Playfair Display',serif;">Trek Status Overview</h6>
+                    <a href="{{ url_for('admin.treks') }}" class="btn btn-sm btn-outline-forest">View All</a>
+                </div>
+                <div class="card-body">
+                    {% for status, color in [('Pending','warning'),('Approved','info'),('Open','success'),('Closed','danger'),('Completed','secondary')] %}
+                    <div class="d-flex justify-content-between align-items-center mb-3">
+                        <div class="d-flex align-items-center gap-2">
+                            <span class="badge badge-{{ status.lower() }} px-2 py-1">{{ status }}</span>
+                        </div>
+                        <div class="d-flex align-items-center gap-3">
+                            <div style="width:120px;height:8px;background:rgba(26,61,43,0.08);border-radius:4px;overflow:hidden;">
+                                {% set count = status_stats[status] %}
+                                {% set pct = (count / total_treks * 100)|int if total_treks > 0 else 0 %}
+                                <div style="width:{{ pct }}%;height : 100%;background:var(--{% if status=='Open' %}sage{% elif status=='Completed' %}forest{% elif status=='Pending' %}gold{% elif status=='Closed' %}ember{% else %}moss{% endif %});border-radius:4px;"></div>
+                            </div>
+                            <span style="font-weight:700;color:var(--forest);min-width:24px;text-align:right;">{{ count }}</span>
+                        </div>
+                    </div>
+                    {% endfor %}
+
+                    <hr style="border-color:rgba(26,61,43,0.08);">
+                    <div class="row text-center g-2 mt-1">
+                        {% for diff, color in [('Easy','#52b788'),('Moderate','#f4a261'),('Hard','#e76f51')] %}
+                        <div class="col-4">
+                            <div style="font-size:1.3rem;font-weight:700;color:{{ color }};font-family:'Playfair Display',serif;">
+                                {{ easy_count if diff=='Easy' else (moderate_count if diff=='Moderate' else hard_count) }}
+                            </div>
+                            <div style="font-size:0.75rem;color:var(--stone);">{{ diff }}</div>
+                        </div>
+                        {% endfor %}
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Recent Treks -->
+        <div class="col-lg-7">
+            <div class="card h-100">
+                <div class="card-header d-flex justify-content-between align-items-center">
+                    <h6 class="mb-0" style="font-family:'Playfair Display',serif;">Recent Treks</h6>
+                    <a href="{{ url_for('admin.add_trek') }}" class="btn btn-sm btn-forest">
+                        <i class="bi bi-plus-lg"></i>
+                    </a>
+                </div>
+                <div class="card-body p-0">
+                    {% if recent_treks %}
+                    <table class="table mb-0">
+                        <thead>
+                            <tr>
+                                <th>Trek</th>
+                                <th>Difficulty</th>
+                                <th>Slots</th>
+                                <th>Status</th>
+                                <th></th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for trek in recent_treks %}
+                            <tr>
+                                <td>
+                                    <div style="font-weight:600;font-size:0.9rem;">{{ trek.name }}</div>
+                                    <div style="font-size:0.78rem;color:var(--stone);"><i class="bi bi-geo-alt me-1"></i>{{ trek.location }}</div>
+                                </td>
+                                <td><span class="badge badge-{{ trek.difficulty.lower() }} px-2">{{ trek.difficulty }}</span></td>
+                                <td>
+                                    <div style="font-size:0.85rem;">{{ trek.available_slots }}/{{ trek.total_slots }}</div>
+                                    <div class="slots-bar" style="width:60px;background:rgba(26,61,43,0.1);">
+                                        <div class="slots-fill" style="width:{{ trek.completion_percent }}%"></div>
+                                    </div>
+                                </td>
+                                <td><span class="badge badge-{{ trek.status.lower() }} px-2">{{ trek.status }}</span></td>
+                                <td>
+                                    <a href="{{ url_for('admin.edit_trek', trek_id=trek.id) }}" class="btn btn-sm btn-outline-forest py-0 px-2">
+                                        <i class="bi bi-pencil"></i>
+                                    </a>
+                                </td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                    {% else %}
+                    <div class="empty-state py-4">
+                        <i class="bi bi-map"></i>
+                        <h5>No treks yet</h5>
+                        <a href="{{ url_for('admin.add_trek') }}" class="btn btn-forest btn-sm mt-2">Create First Trek</a>
+                    </div>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+        <!-- Revenue -->
+        <div class="col-lg-4">
+            <div class="card h-100">
+                <div class="card-header">
+                    <h6 class="mb-0" style="font-family:'Playfair Display',serif;">Revenue</h6>
+                </div>
+                <div class="card-body text-center">
+                    <h2 style="color:var(--forest);font-weight:700;">₹{{ "%.0f"|format(revenue) }}</h2>
+                    <small class="text-muted"> Estimated revenue from booked & completed treks</small>
+                </div>
+            </div>
+        </div>
+        <div class="col-lg-4">
+            <div class="card h-100">
+                <div class="card-header">
+                    <h6 class="mb-0" style="font-family:'Playfair Display',serif;"> Booking Distribution</h6>
+                </div>
+                <div class="card-body">
+                    <label>Easy</label>
+                    <div class="progress mb-3">
+                        <div class="progress-bar bg-success" style="width:{{ easy_percent }}%"> {{ easy_percent }}%</div>
+                    </div>
+                    <label>Moderate</label>
+                    <div class="progress mb-3">
+                        <div class="progress-bar bg-warning" style="width:{{ moderate_percent }}%">{{ moderate_percent }}%</div>
+                    </div>
+                    <label>Hard</label>
+                    <div class="progress">
+                        <div class="progress-bar bg-danger" style="width:{{ hard_percent }}%"> {{ hard_percent }}%</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="col-lg-4">
+            <div class="card h-100">
+                <div class="card-header">
+                    <h6 class="mb-0" style="font-family:'Playfair Display',serif;">Ratings</h6>
+                </div>
+                <div class="card-body">
+                    <div class="mb-4">
+                        <h3 class="text-warning"> ⭐ {{ "%.1f"|format(average_rating) }}</h3>
+                        <small class="text-muted">Overall Average Rating</small>
+                    </div>
+                    {% if highest_rated %}
+                    <hr>
+                    <strong>Highest Rated Trek</strong>
+                    <p class="mb-1 mt-2">{{ highest_rated[0].name }}</p>
+                    <span class="badge bg-warning text-dark"> ⭐ {{ "%.1f"|format(highest_rated[1]) }}</span>
+                    {% else %}
+                    <p class="text-muted"> No reviews yet. </p>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+        <div class="col-12">
+            <div class="card">
+                <div class="card-header">
+                    <h6 class="mb-0" style="font-family:'Playfair Display',serif;">Most Popular Treks</h6>
+                </div>
+                <div class="card-body p-0">
+                    <table class="table mb-0">
+                        <thead>
+                            <tr><th>Trek</th><th>Bookings</th></tr>
+                        </thead>
+                        <tbody>
+                        {% for trek, count in popular_treks %}
+                            <tr><td>{{ trek.name }}</td> <td>{{ count }}</td>
+                            </tr>
+                        {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+        <!-- Recent Bookings -->
+        <div class="col-12">
+            <div class="card">
+                <div class="card-header d-flex justify-content-between align-items-center">
+                    <h6 class="mb-0" style="font-family:'Playfair Display',serif;">Recent Bookings
+                        <span class="nav-badge ms-2">{{ active_bookings }} active</span>
+                    </h6>
+                    <a href="{{ url_for('admin.bookings') }}" class="btn btn-sm btn-outline-forest">View All</a>
+                </div>
+                <div class="card-body p-0">
+                    {% if recent_bookings %}
+                    <table class="table mb-0">
+                        <thead>
+                            <tr><th>#</th><th>Trekker</th><th>Trek</th><th>Date</th><th>Participants</th><th>Status</th></tr>
+                        </thead>
+                        <tbody>
+                            {% for b in recent_bookings %}
+                            <tr>
+                                <td style="font-size:0.8rem;color:var(--stone);">#{{ b.id }}</td>
+                                <td>
+                                    <div style="font-weight:600;font-size:0.88rem;">{{ b.user.name }}</div>
+                                    <div style="font-size:0.78rem;color:var(--stone);">@{{ b.user.username }}</div>
+                                </td>
+                                <td style="font-size:0.88rem;">{{ b.trek.name }}</td>
+                                <td style="font-size:0.82rem;color:var(--stone);">{{ b.booking_date.strftime('%d %b %Y') }}</td>
+                                <td style="font-size:0.88rem;">{{ b.num_participants }}</td>
+                                <td><span class="badge badge-{{ b.status.lower() }} px-2">{{ b.status }}</span></td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                    {% else %}
+                    <div class="empty-state py-4"><i class="bi bi-journal"></i><h5>No bookings yet</h5></div>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
