@@ -212,7 +212,6 @@ def edit_trek(trek_id):
 @admin_required
 def delete_trek(trek_id):
     trek = Trek.query.get_or_404(trek_id)
-    # Cancel all bookings first
     for booking in trek.bookings:
         booking.status = 'Cancelled'
     db.session.delete(trek)
@@ -240,7 +239,6 @@ def assign_staff(trek_id):
 @admin_required
 def staff():
     search = request.args.get('search', '').strip()
-    #query = Staff.query.filter_by(status='active')
     query = Staff.query
     if search:
         query = query.filter(
@@ -249,49 +247,6 @@ def staff():
     staff_list = query.order_by(Staff.created_at.desc()).all()
     return render_template('admin/staff.html', staff_list=staff_list, search=search)
 
-
-"""
-Delete this whole block if not needed 
-@admin_bp.route('/staff/add', methods=['GET', 'POST'])
-@login_required
-@admin_required
-def add_staff():
-    if request.method == 'POST':
-        username = request.form.get('username', '').strip()
-        email = request.form.get('email', '').strip()
-        password = request.form.get('password', '')
-        name = request.form.get('name', '').strip()
-        phone = request.form.get('phone', '').strip()
-        experience = request.form.get('experience_years', '0')
-        specialization = request.form.get('specialization', '').strip()
-
-        errors = []
-        if not username: errors.append('Username required.')
-        if not email: errors.append('Email required.')
-        if not password or len(password) < 6: errors.append('Password min 6 chars.')
-        if not name: errors.append('Name required.')
-        if Staff.query.filter_by(username=username).first(): errors.append('Username taken.')
-        if Staff.query.filter_by(email=email).first(): errors.append('Email taken.')
-
-        if errors:
-            for e in errors: flash(e, 'danger')
-            return render_template('admin/staff_form.html', staff=None)
-
-        staff = Staff(
-            username=username, email=email,
-            password_hash=generate_password_hash(password),
-            name=name, phone=phone,
-            experience_years=int(experience) if experience.isdigit() else 0,
-            specialization=specialization
-        )
-        db.session.add(staff)
-        db.session.commit()
-        flash(f'Staff "{name}" created!', 'success')
-        return redirect(url_for('admin.staff'))
-
-    return render_template('admin/staff_form.html', staff=None) """
-
-#This is where the admin approves staff
 @admin_bp.route('/staff/pending')
 @login_required
 @admin_required
@@ -302,30 +257,6 @@ def pending_staff():
         query = query.filter(Staff.name.ilike(f'%{search}%') | Staff.username.ilike(f'%{search}%'))
     staff_list = query.order_by(Staff.created_at.desc()).all()
     return render_template('admin/pending_staff.html',staff_list=staff_list,search=search)
-
-
-"""
-Remove it!!! 
-@admin_bp.route('/staff/<int:staff_id>/edit', methods=['GET', 'POST'])
-@login_required
-@admin_required
-def edit_staff(staff_id):
-    staff = Staff.query.get_or_404(staff_id)
-    if request.method == 'POST':
-        staff.name = request.form.get('name', '').strip()
-        staff.email = request.form.get('email', '').strip()
-        staff.phone = request.form.get('phone', '').strip()
-        exp = request.form.get('experience_years', '0')
-        staff.experience_years = int(exp) if exp.isdigit() else 0
-        staff.specialization = request.form.get('specialization', '').strip()
-        new_pass = request.form.get('new_password', '')
-        if new_pass and len(new_pass) >= 6:
-            staff.set_password(new_pass)
-        db.session.commit()
-        flash('Staff updated!', 'success')
-        return redirect(url_for('admin.staff'))
-    return render_template('admin/staff_form.html', staff=staff) """
-
 
 @admin_bp.route('/staff/<int:staff_id>/toggle_status', methods=['POST'])
 @login_required
@@ -383,9 +314,6 @@ def toggle_user_status(user_id):
     db.session.commit()
     flash(f'User status updated to {user.status}.', 'success')
     return redirect(url_for('admin.users'))
-
-
-# ---- BOOKINGS ----
 
 @admin_bp.route('/bookings')
 @login_required
