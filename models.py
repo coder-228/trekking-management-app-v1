@@ -128,6 +128,19 @@ class Trek(db.Model):
         if self.total_slots == 0:
             return 0
         return int((self.booked_slots / self.total_slots) * 100)
+    
+    @property
+    def average_rating(self):
+        if not self.reviews:
+            return 0
+
+        total = sum(r.rating for r in self.reviews)
+        return round(total / len(self.reviews), 1)
+
+
+    @property
+    def review_count(self):
+        return len(self.reviews)
 
 
 class Booking(db.Model):
@@ -142,3 +155,18 @@ class Booking(db.Model):
     special_requirements = db.Column(db.Text)
     notes = db.Column(db.Text)
     updated_at = db.Column(db.DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
+
+class Review(db.Model):
+    __tablename__ = "reviews"
+
+    id = db.Column(db.Integer, primary_key=True)
+    user_id = db.Column(db.Integer, db.ForeignKey('users.id'), nullable=False)
+    trek_id = db.Column(db.Integer, db.ForeignKey('treks.id'), nullable=False)
+    rating = db.Column(db.Integer, nullable=False)   # 1-5
+    comment = db.Column(db.Text)
+    created_at = db.Column(db.DateTime, default=datetime.utcnow)
+    user = db.relationship("User", backref="reviews")
+    trek = db.relationship("Trek", backref="reviews")
+    __table_args__ = (
+        db.UniqueConstraint('user_id', 'trek_id', name='unique_user_review'),
+    )
