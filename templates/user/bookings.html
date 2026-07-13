@@ -1,0 +1,96 @@
+{% extends "base.html" %}
+{% block title %}My Bookings{% endblock %}
+{% block content %}
+<div class="main-content">
+    <div class="page-header">
+        <h2><i class="bi bi-journal-check me-2" style="color:var(--sage)"></i>My Bookings</h2>
+    </div>
+
+    <!-- Filter -->
+    <div class="card mb-3">
+        <div class="card-body py-3">
+            <form method="GET" class="d-flex gap-2 align-items-center">
+                <select name="status" class="form-select form-select-sm" style="max-width:200px;">
+                    <option value="">All Bookings</option>
+                    {% for s in ['Booked','Cancelled','Completed'] %}
+                    <option value="{{ s }}" {% if status_filter==s %}selected{% endif %}>{{ s }}</option>
+                    {% endfor %}
+                </select>
+                <button type="submit" class="btn btn-forest btn-sm">Filter</button>
+                <a href="{{ url_for('user.bookings') }}" class="btn btn-outline-secondary btn-sm">Clear</a>
+            </form>
+        </div>
+    </div>
+
+    {% if bookings %}
+    <div class="row g-3">
+        {% for b in bookings %}
+        <div class="col-md-6 col-lg-4">
+            <div class="card h-100">
+                <div style="background:linear-gradient(135deg,var(--forest),var(--moss));padding:1.25rem;border-radius:var(--card-radius) var(--card-radius) 0 0;color:white;">
+                    <div class="d-flex justify-content-between align-items-start">
+                        <div>
+                            <h6 style="font-family:'Playfair Display',serif;margin-bottom:0.25rem;">{{ b.trek.name }}</h6>
+                            <div style="font-size:0.8rem;opacity:0.8;"><i class="bi bi-geo-alt me-1"></i>{{ b.trek.location }}</div>
+                        </div>
+                        <span class="badge badge-{{ b.status.lower() }} px-2">{{ b.status }}</span>
+                    </div>
+                </div>
+                <div class="card-body">
+                    <div class="row g-2 text-center mb-3">
+                        <div class="col-4">
+                            <div style="font-size:0.7rem;color:var(--stone);">Difficulty</div>
+                            <span class="badge badge-{{ b.trek.difficulty.lower() }}" style="font-size:0.72rem;">{{ b.trek.difficulty }}</span>
+                        </div>
+                        <div class="col-4">
+                            <div style="font-size:0.7rem;color:var(--stone);">Duration</div>
+                            <div style="font-weight:700;font-size:0.88rem;color:var(--forest);">{{ b.trek.duration_days }}d</div>
+                        </div>
+                        <div class="col-4">
+                            <div style="font-size:0.7rem;color:var(--stone);">Persons</div>
+                            <div style="font-weight:700;font-size:0.88rem;color:var(--moss);">{{ b.num_participants }}</div>
+                        </div>
+                    </div>
+
+                    <div style="font-size:0.82rem;color:var(--stone);margin-bottom:0.5rem;">
+                        <i class="bi bi-calendar me-1"></i>Booked: {{ b.booking_date.strftime('%d %b %Y') }}
+                    </div>
+                    {% if b.trek.start_date %}
+                    <div style="font-size:0.82rem;color:var(--stone);margin-bottom:0.75rem;">
+                        <i class="bi bi-flag me-1"></i>Trek Start: {{ b.trek.start_date.strftime('%d %b %Y') }}
+                    </div>
+                    {% endif %}
+                    {% if b.special_requirements %}
+                    <div style="font-size:0.8rem;color:var(--stone);background:rgba(26,61,43,0.04);padding:0.5rem;border-radius:6px;margin-bottom:0.75rem;">
+                        {{ b.special_requirements[:80] }}{% if b.special_requirements|length > 80 %}...{% endif %}
+                    </div>
+                    {% endif %}
+
+                    {% if b.status == 'Booked' %}
+                    <form method="POST" action="{{ url_for('user.cancel_booking', booking_id=b.id) }}">
+                        <button type="submit" class="btn btn-sm btn-outline-danger w-100"
+                                onclick="return confirm('Cancel booking for {{ b.trek.name }}?')">
+                            <i class="bi bi-x-circle me-1"></i>Cancel Booking
+                        </button>
+                    </form>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+        {% endfor %}
+    </div>
+    {% else %}
+    <div class="card">
+        <div class="card-body">
+            <div class="empty-state">
+                <i class="bi bi-journal"></i>
+                <h5>No Bookings Found</h5>
+                <a href="{{ url_for('user.treks') }}" class="btn btn-forest btn-sm mt-2">
+                    <i class="bi bi-binoculars me-1"></i>Explore Treks
+                </a>
+            </div>
+        </div>
+    </div>
+    {% endif %}
+</div>
+{% endblock %}

@@ -1,0 +1,127 @@
+{% extends "base.html" %}
+{% block title %}Trekking History{% endblock %}
+{% block content %}
+<div class="main-content">
+    <div class="page-header">
+        <h2><i class="bi bi-clock-history me-2" style="color:var(--sage)"></i>My Trekking History</h2>
+        <p style="color:var(--stone);margin:0;">Your completed and cancelled adventures</p>
+    </div>
+
+    {% if completed %}
+    <div class="mb-4">
+        <h5 style="font-family:'Playfair Display',serif;color:var(--forest);margin-bottom:1rem;">
+            <i class="bi bi-trophy-fill me-2" style="color:var(--gold);"></i>Completed Treks ({{ completed|length }})
+        </h5>
+        <div class="row g-3">
+            {% for b in completed %}
+            <div class="col-md-6 col-lg-4">
+                <div class="card h-100" style="border-left:4px solid var(--sage);">
+                    <div class="card-body">
+                        <div class="d-flex justify-content-between align-items-start mb-2">
+                            <div>
+                                <h6 style="font-family:'Playfair Display',serif;color:var(--forest);margin-bottom:0.15rem;">{{ b.trek.name }}</h6>
+                                <div style="font-size:0.8rem;color:var(--stone);"><i class="bi bi-geo-alt me-1"></i>{{ b.trek.location }}</div>
+                            </div>
+                            <i class="bi bi-check-circle-fill" style="font-size:1.3rem;color:var(--sage);"></i>
+                        </div>
+                        <div class="row g-2 text-center my-2 py-2" style="border-top:1px solid rgba(26,61,43,0.06);border-bottom:1px solid rgba(26,61,43,0.06);">
+                            <div class="col-4">
+                                <div style="font-size:0.68rem;color:var(--stone);">Difficulty</div>
+                                <span class="badge badge-{{ b.trek.difficulty.lower() }}" style="font-size:0.68rem;">{{ b.trek.difficulty }}</span>
+                            </div>
+                            <div class="col-4">
+                                <div style="font-size:0.68rem;color:var(--stone);">Duration</div>
+                                <div style="font-weight:700;font-size:0.85rem;color:var(--forest);">{{ b.trek.duration_days }}d</div>
+                            </div>
+                            <div class="col-4">
+                                <div style="font-size:0.68rem;color:var(--stone);">Group</div>
+                                <div style="font-weight:700;font-size:0.85rem;color:var(--moss);">{{ b.num_participants }}</div>
+                            </div>
+                        </div>
+                        <div style="font-size:0.8rem;color:var(--stone);">
+                            <i class="bi bi-calendar-check me-1"></i>Completed: {{ b.updated_at.strftime('%d %b %Y') if b.updated_at else b.booking_date.strftime('%d %b %Y') }}
+                        </div>
+                        <hr>
+                        {% if reviews.get(b.trek_id) %}
+                            <div class="mb-2">
+                                {% for i in range(reviews[b.trek_id].rating) %}
+                                    <i class="bi bi-star-fill text-warning"></i>
+                                {% endfor %}
+                                {% for i in range(5 - reviews[b.trek_id].rating) %}
+                                    <i class="bi bi-star text-warning"></i>
+                                {% endfor %}
+                            </div>
+                            {% if reviews[b.trek_id].comment %}
+                                <p class="small text-muted mb-3">"{{ reviews[b.trek_id].comment }}"</p>
+                            {% endif %}
+                            <a href="{{ url_for('user.review_trek', trek_id=b.trek.id) }}" class="btn btn-outline-forest btn-sm w-100">Edit Review</a>
+                        {% else %}
+                            <a href="{{ url_for('user.review_trek', trek_id=b.trek.id) }}" class="btn btn-forest btn-sm w-100">
+                                <i class="bi bi-star me-1"></i> Write Review</a>
+                        {% endif %}
+                    </div>
+                </div>
+            </div>
+            {% endfor %}
+        </div>
+    </div>
+    {% endif %}
+
+    {% if cancelled %}
+    <div>
+        <h5 style="font-family:'Playfair Display',serif;color:var(--forest);margin-bottom:1rem;">
+            <i class="bi bi-x-circle me-2" style="color:var(--ember);"></i>Cancelled Bookings ({{ cancelled|length }})
+        </h5>
+        <div class="row g-3">
+            {% for b in cancelled %}
+            <div class="col-md-6 col-lg-4">
+                <div class="card h-100" style="border-left:4px solid var(--ember);opacity:0.85;">
+                    <div class="card-body">
+                        <div class="d-flex justify-content-between align-items-start mb-2">
+                            <div>
+                                <h6 style="font-family:'Playfair Display',serif;color:var(--forest);margin-bottom:0.15rem;">{{ b.trek.name }}</h6>
+                                <div style="font-size:0.8rem;color:var(--stone);"><i class="bi bi-geo-alt me-1"></i>{{ b.trek.location }}</div>
+                            </div>
+                            <i class="bi bi-x-circle-fill" style="font-size:1.3rem;color:var(--ember);opacity:0.6;"></i>
+                        </div>
+                        <div class="row g-2 text-center my-2 py-2" style="border-top:1px solid rgba(26,61,43,0.06);border-bottom:1px solid rgba(26,61,43,0.06);">
+                            <div class="col-4">
+                                <div style="font-size:0.68rem;color:var(--stone);">Difficulty</div>
+                                <span class="badge badge-{{ b.trek.difficulty.lower() }}" style="font-size:0.68rem;">{{ b.trek.difficulty }}</span>
+                            </div>
+                            <div class="col-4">
+                                <div style="font-size:0.68rem;color:var(--stone);">Duration</div>
+                                <div style="font-weight:700;font-size:0.85rem;color:var(--forest);">{{ b.trek.duration_days }}d</div>
+                            </div>
+                            <div class="col-4">
+                                <div style="font-size:0.68rem;color:var(--stone);">Group</div>
+                                <div style="font-weight:700;font-size:0.85rem;color:var(--moss);">{{ b.num_participants }}</div>
+                            </div>
+                        </div>
+                        <div style="font-size:0.8rem;color:var(--stone);">
+                            <i class="bi bi-calendar-x me-1"></i>Booked on: {{ b.booking_date.strftime('%d %b %Y') }}
+                        </div>
+                    </div>
+                </div>
+            </div>
+            {% endfor %}
+        </div>
+    </div>
+    {% endif %}
+
+    {% if not completed and not cancelled %}
+    <div class="card">
+        <div class="card-body">
+            <div class="empty-state">
+                <i class="bi bi-clock-history"></i>
+                <h5>No History Yet</h5>
+                <p style="font-size:0.88rem;">Your completed and cancelled treks will appear here.</p>
+                <a href="{{ url_for('user.treks') }}" class="btn btn-forest btn-sm mt-2">
+                    <i class="bi bi-binoculars me-1"></i>Explore Treks
+                </a>
+            </div>
+        </div>
+    </div>
+    {% endif %}
+</div>
+{% endblock %}

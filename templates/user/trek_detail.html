@@ -1,0 +1,145 @@
+{% extends "base.html" %}
+{% block title %}{{ trek.name }}{% endblock %}
+{% block content %}
+<div class="main-content" style="max-width:960px;">
+    <div class="page-header">
+        <nav aria-label="breadcrumb"><ol class="breadcrumb">
+            <li class="breadcrumb-item"><a href="{{ url_for('user.dashboard') }}" style="color:var(--moss);">Home</a></li>
+            <li class="breadcrumb-item"><a href="{{ url_for('user.treks') }}" style="color:var(--moss);">Explore</a></li>
+            <li class="breadcrumb-item active">{{ trek.name }}</li>
+        </ol></nav>
+    </div>
+
+    <div class="row g-3">
+        <!-- Trek Details -->
+        <div class="col-lg-8">
+            <div class="card">
+                <div class="trek-card-header" style="border-radius:var(--card-radius) var(--card-radius) 0 0;padding:2rem;">
+                    <span class="difficulty-tag badge badge-{{ trek.difficulty.lower() }}">{{ trek.difficulty }}</span>
+                    <h3 style="font-family:'Playfair Display',serif;margin-bottom:0.5rem;font-size:1.6rem;">{{ trek.name }}</h3>
+                    <div style="opacity:0.85;"><i class="bi bi-geo-alt me-1"></i>{{ trek.location }}</div>
+                    {% if trek.altitude %}
+                    <div style="opacity:0.7;font-size:0.88rem;"><i class="bi bi-arrow-up me-1"></i>{{ trek.altitude }} altitude</div>
+                    {% endif %}
+                    <!-- Average Rating -->
+                    <div style="margin-top:8px;font-size:0.85rem;">
+                        {% if trek.review_count > 0 %}
+                            <span style="color:gold;">★</span>
+                            <strong>{{ "%.1f"|format(trek.average_rating) }}/5</strong>
+                            <span style="opacity:.75;">({{ trek.review_count }} reviews)</span>
+                        {% else %}
+                            <span style="opacity:.7;">No reviews yet</span>
+                        {% endif %}
+                    </div>
+                </div>
+                <div class="card-body">
+                    <!-- Quick Stats -->
+                    <div class="row g-3 text-center mb-4 pb-3" style="border-bottom:1px solid rgba(26,61,43,0.08);">
+                        <div class="col-3">
+                            <i class="bi bi-clock" style="font-size:1.2rem;color:var(--moss);"></i>
+                            <div style="font-size:0.75rem;color:var(--stone);margin-top:4px;">Duration</div>
+                            <div style="font-weight:700;color:var(--forest);">{{ trek.duration_days }} days</div>
+                        </div>
+                        <div class="col-3">
+                            <i class="bi bi-people" style="font-size:1.2rem;color:var(--moss);"></i>
+                            <div style="font-size:0.75rem;color:var(--stone);margin-top:4px;">Available</div>
+                            <div style="font-weight:700;color:var(--moss);">{{ trek.available_slots }} slots</div>
+                        </div>
+                        <div class="col-3">
+                            <i class="bi bi-calendar" style="font-size:1.2rem;color:var(--moss);"></i>
+                            <div style="font-size:0.75rem;color:var(--stone);margin-top:4px;">Start Date</div>
+                            <div style="font-weight:700;color:var(--forest);">{{ trek.start_date.strftime('%d %b') if trek.start_date else 'TBD' }}</div>
+                        </div>
+                        <div class="col-3">
+                            <i class="bi bi-currency-rupee" style="font-size:1.2rem;color:var(--ember);"></i>
+                            <div style="font-size:0.75rem;color:var(--stone);margin-top:4px;">Price</div>
+                            <div style="font-weight:700;color:var(--ember);">{% if trek.price > 0 %}₹{{ "%.0f"|format(trek.price) }}{% else %}Free{% endif %}</div>
+                        </div>
+                    </div>
+
+                    {% if trek.description %}
+                    <h6 style="font-family:'Playfair Display',serif;color:var(--forest);">About This Trek</h6>
+                    <p style="color:var(--stone);font-size:0.9rem;line-height:1.7;">{{ trek.description }}</p>
+                    {% endif %}
+
+                    {% if trek.assigned_staff %}
+                    <div style="background:rgba(82,183,136,0.08);border-radius:10px;padding:1rem;margin-top:1rem;">
+                        <div style="font-size:0.8rem;color:var(--stone);">Trek Guide</div>
+                        <div style="font-weight:600;color:var(--forest);">{{ trek.assigned_staff.name }}</div>
+                        {% if trek.assigned_staff.experience_years %}
+                        <div style="font-size:0.82rem;color:var(--stone);">{{ trek.assigned_staff.experience_years }} years experience</div>
+                        {% endif %}
+                        {% if trek.assigned_staff.specialization %}
+                        <div style="font-size:0.82rem;color:var(--stone);">{{ trek.assigned_staff.specialization }}</div>
+                        {% endif %}
+                    </div>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+
+        <!-- Booking Card -->
+        <div class="col-lg-4">
+            <div class="card" style="position:sticky;top:80px;">
+                <div class="card-header">
+                    <h6 class="mb-0" style="font-family:'Playfair Display',serif;">Book This Trek</h6>
+                </div>
+                <div class="card-body">
+                    {% if trek.status != 'Open' %}
+                    <div class="alert alert-warning">
+                        <i class="bi bi-exclamation-circle me-1"></i>
+                        This trek is currently <strong>{{ trek.status }}</strong> and not available for booking.
+                    </div>
+                    {% elif existing_booking %}
+                    <div style="background:rgba(82,183,136,0.1);border-radius:10px;padding:1.25rem;text-align:center;">
+                        <i class="bi bi-check-circle-fill" style="font-size:2rem;color:var(--sage);"></i>
+                        <div style="font-weight:700;color:var(--forest);margin-top:0.5rem;">Already Booked!</div>
+                        <div style="font-size:0.85rem;color:var(--stone);">Booked on {{ existing_booking.booking_date.strftime('%d %b %Y') }}</div>
+                        <a href="{{ url_for('user.bookings') }}" class="btn btn-outline-forest btn-sm mt-2">View Bookings</a>
+                    </div>
+                    {% elif trek.available_slots == 0 %}
+                    <div class="alert alert-danger">
+                        <i class="bi bi-x-circle me-1"></i>Fully booked! No slots available.
+                    </div>
+                    {% else %}
+                    <form method="POST" action="{{ url_for('user.book_trek', trek_id=trek.id) }}">
+                        <div class="mb-3">
+                            <label class="form-label">Number of Participants</label>
+                            <input type="number" name="num_participants" class="form-control"
+                                   min="1" max="{{ trek.available_slots }}" value="1">
+                            <small style="color:var(--stone);font-size:0.78rem;">Max: {{ trek.available_slots }}</small>
+                        </div>
+                        <div class="mb-3">
+                            <label class="form-label">Special Requirements</label>
+                            <textarea name="special_requirements" class="form-control" rows="3"
+                                      placeholder="Any dietary requirements, medical conditions, etc."></textarea>
+                        </div>
+                        {% if trek.price > 0 %}
+                        <div style="background:rgba(231,111,81,0.08);border-radius:10px;padding:0.75rem;margin-bottom:1rem;">
+                            <div style="font-size:0.8rem;color:var(--stone);">Price per person</div>
+                            <div style="font-weight:700;color:var(--ember);font-size:1.1rem;">₹{{ "%.0f"|format(trek.price) }}</div>
+                        </div>
+                        {% endif %}
+                        <button type="submit" class="btn btn-forest w-100"
+                                onclick="return confirm('Confirm booking for {{ trek.name }}?')">
+                            <i class="bi bi-check-lg me-1"></i>Confirm Booking
+                        </button>
+                    </form>
+                    {% endif %}
+
+                    <div class="mt-3 pt-3" style="border-top:1px solid rgba(26,61,43,0.08);">
+                        <div class="d-flex align-items-center gap-2 mb-2">
+                            <i class="bi bi-shield-check" style="color:var(--sage);"></i>
+                            <span style="font-size:0.82rem;color:var(--stone);">Secure booking process</span>
+                        </div>
+                        <div class="d-flex align-items-center gap-2">
+                            <i class="bi bi-x-circle" style="color:var(--sage);"></i>
+                            <span style="font-size:0.82rem;color:var(--stone);">Free cancellation</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
