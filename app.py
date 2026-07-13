@@ -24,28 +24,19 @@ def create_app():
     app.register_blueprint(admin_bp, url_prefix='/admin')
     app.register_blueprint(staff_bp, url_prefix='/staff')
     app.register_blueprint(user_bp, url_prefix='/user')
-
     with app.app_context():
         db.create_all()
         seed_admin()
-
     return app
 
 def seed_admin():
     from models import Admin
     from werkzeug.security import generate_password_hash
     if not Admin.query.first():
-        admin = Admin(
-            username='admin',
-            email='admin@trek.com',
-            password_hash=generate_password_hash('admin123'),
-            name='Super Admin'
-        )
+        admin = Admin(username='admin',email='admin@trek.com',password_hash=generate_password_hash('admin123'),name='Super Admin')
         db.session.add(admin)
         db.session.commit()
         print("Admin seeded: admin / admin123")
-
 app = create_app()
-
 if __name__ == '__main__':
     app.run(debug=False)
