@@ -8,8 +8,6 @@ from datetime import datetime
 from sqlalchemy import func
 
 admin_bp = Blueprint('admin', __name__)
-
-
 def admin_required(f):
     @wraps(f)
     def decorated(*args, **kwargs):
@@ -69,8 +67,6 @@ def dashboard():
     )
 
     average_rating = db.session.query(func.avg(Review.rating)).scalar() or 0
-
-    # Stats by status
     status_stats = {}
     for status in ['Pending', 'Approved', 'Open', 'Closed', 'Completed']:
         status_stats[status] = Trek.query.filter_by(status=status).count()
@@ -95,18 +91,14 @@ def treks():
 
     query = Trek.query
     if search:
-        query = query.filter(
-            Trek.name.ilike(f'%{search}%') | Trek.location.ilike(f'%{search}%')
-        )
+        query = query.filter(Trek.name.ilike(f'%{search}%') | Trek.location.ilike(f'%{search}%'))
     if difficulty:
         query = query.filter_by(difficulty=difficulty)
     if status:
         query = query.filter_by(status=status)
-
     treks = query.order_by(Trek.created_at.desc()).all()
     all_staff = Staff.query.filter_by(status='active').all()
-    return render_template('admin/treks.html', treks=treks, staff_list=all_staff,
-                           search=search, difficulty=difficulty, status=status)
+    return render_template('admin/treks.html', treks=treks, staff_list=all_staff, search=search, difficulty=difficulty, status=status)
 
 
 @admin_bp.route('/treks/add', methods=['GET', 'POST'])
@@ -134,21 +126,18 @@ def add_trek():
         if not difficulty: errors.append('Difficulty is required.')
         if not duration_days or not duration_days.isdigit(): errors.append('Valid duration required.')
         if not total_slots or not total_slots.isdigit(): errors.append('Valid total slots required.')
-
         if errors:
             for e in errors: flash(e, 'danger')
             return render_template('admin/trek_form.html', staff_list=all_staff, trek=None)
 
-        trek = Trek(
-            name=name, location=location, description=description,
+        trek = Trek(name=name, location=location, description=description,
             difficulty=difficulty, duration_days=int(duration_days),
             total_slots=int(total_slots), available_slots=int(total_slots),
             price=float(price) if price else 0.0,
             altitude=altitude, status=status,
             start_date=datetime.strptime(start_date, '%Y-%m-%d').date() if start_date else None,
             end_date=datetime.strptime(end_date, '%Y-%m-%d').date() if end_date else None,
-            staff_id=int(staff_id) if staff_id else None
-        )
+            staff_id=int(staff_id) if staff_id else None)
         db.session.add(trek)
         db.session.commit()
         flash(f'Trek "{name}" created successfully!', 'success')
@@ -194,7 +183,6 @@ def edit_trek(trek_id):
                 return render_template('admin/trek_form.html', trek=trek, staff_list=all_staff)
             trek.total_slots = new_total
             trek.available_slots = new_total - booked
-
         trek.start_date = datetime.strptime(start_date, '%Y-%m-%d').date() if start_date else None
         trek.end_date = datetime.strptime(end_date, '%Y-%m-%d').date() if end_date else None
         trek.staff_id = int(staff_id) if staff_id else None
@@ -203,7 +191,6 @@ def edit_trek(trek_id):
         db.session.commit()
         flash('Trek updated successfully!', 'success')
         return redirect(url_for('admin.treks'))
-
     return render_template('admin/trek_form.html', trek=trek, staff_list=all_staff)
 
 
@@ -230,9 +217,6 @@ def assign_staff(trek_id):
     db.session.commit()
     flash('Staff assigned successfully!', 'success')
     return redirect(url_for('admin.treks'))
-
-
-# ---- STAFF MANAGEMENT ----
 
 @admin_bp.route('/staff')
 @login_required
@@ -288,9 +272,6 @@ def delete_staff(staff_id):
     flash('Staff removed.', 'success')
     return redirect(url_for('admin.staff'))
 
-
-# ---- USER MANAGEMENT ----
-
 @admin_bp.route('/users')
 @login_required
 @admin_required
@@ -303,7 +284,6 @@ def users():
         )
     users = query.order_by(User.created_at.desc()).all()
     return render_template('admin/users.html', users=users, search=search)
-
 
 @admin_bp.route('/users/<int:user_id>/toggle_status', methods=['POST'])
 @login_required
