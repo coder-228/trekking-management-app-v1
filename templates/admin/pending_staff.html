@@ -1,0 +1,105 @@
+{% extends "base.html" %}
+{% block title %}Manage Staff{% endblock %}
+{% block content %}
+<div class="main-content">
+    <div class="page-header d-flex justify-content-between align-items-center">
+        <div>
+            <h2><i class="bi bi-people me-2" style="color:var(--sage)"></i>Pending Staff Approvals</h2>
+            <nav aria-label="breadcrumb"><ol class="breadcrumb">
+                <li class="breadcrumb-item"><a href="{{ url_for('admin.dashboard') }}" style="color:var(--moss);">Dashboard</a></li>
+                <li class="breadcrumb-item active">Staff</li>
+            </ol></nav>
+        </div>
+    </div>
+    <div class="card mb-3">
+        <div class="card-body py-3">
+            <form method="GET" class="row g-2 align-items-end">
+                <div class="col-md-8">
+                    <div class="search-bar">
+                        <i class="bi bi-search"></i><input type="text" name="search" class="form-control" placeholder="Search by name or username..." value="{{ search }}">
+                    </div>
+                </div>
+                <div class="col-md-4 d-flex gap-2">
+                    <button type="submit" class="btn btn-forest flex-fill"><i class="bi bi-search me-1"></i>Search</button>
+                    <a href="{{ url_for('admin.staff') }}" class="btn btn-outline-secondary"><i class="bi bi-x-lg"></i></a>
+                </div>
+            </form>
+        </div>
+    </div>
+    <div class="card">
+        <div class="card-header">
+            <span style="font-weight:600;">{{ staff_list|length }} staff member(s)</span>
+        </div>
+        <div class="card-body p-0">
+            {% if staff_list %}
+            <div class="table-responsive">
+                <table class="table mb-0">
+                    <thead>
+                        <tr><th>ID</th><th>Staff Member</th><th>Contact</th><th>Experience</th><th>Status</th><th>Actions</th></tr>
+                    </thead>
+                    <tbody>
+                        {% for s in staff_list %}
+                        <tr>
+                            <td style="color:var(--stone);font-size:0.8rem;">#{{ s.id }}</td>
+                            <td>
+                                <div class="d-flex align-items-center gap-2">
+                                    <div class="avatar" style="background:var(--moss);">{{ s.name[0].upper() }}</div>
+                                    <div>
+                                        <div style="font-weight:600;font-size:0.9rem;">{{ s.name }}</div>
+                                        <div style="font-size:0.78rem;color:var(--stone);">@{{ s.username }}</div>
+                                    </div>
+                                </div>
+                            </td>
+                            <td style="font-size:0.85rem;">
+                                <div>{{ s.email }}</div>
+                                {% if s.phone %}<div style="color:var(--stone);">{{ s.phone }}</div>{% endif %}
+                            </td>
+                            <td style="font-size:0.85rem;">
+                                {{ s.experience_years }}yr{% if s.specialization %}
+                                <br><span style="font-size:0.78rem;color:var(--stone);">{{ s.specialization[:30] }}</span>{% endif %}
+                            </td>
+                            <td>
+                                <span class="badge px-2 {% if s.status == 'active' %}badge-open{% elif s.status == 'pending' %} bg-warning text-dark {% else %}badge-closed{% endif %}">
+                                    {{ s.status.capitalize() }}
+                                </span>
+                            </td>
+                            <td>
+                                <div class="d-flex gap-1">
+                                    <form method="POST" action="{{ url_for('admin.toggle_staff_status', staff_id=s.id) }}">
+                                        {% if s.status == 'pending' %}
+                                        <button type="submit" class="btn btn-sm btn-outline-success py-0 px-2" title="Approve" onclick="return confirm('Approve this staff member?')">
+                                            <i class="bi bi-check-circle"></i>
+                                        </button>
+                                        {% elif s.status == 'active' %}
+                                        <button type="submit" class="btn btn-sm btn-outline-warning py-0 px-2" title="Blacklist" onclick="return confirm('Blacklist this staff member?')">
+                                            <i class="bi bi-slash-circle"></i>
+                                        </button>
+                                        {% else %}
+                                        <button type="submit" class="btn btn-sm btn-outline-success py-0 px-2" title="Reactivate" onclick="return confirm('Reactivate this staff member?')">
+                                            <i class="bi bi-arrow-clockwise"></i>
+                                        </button>
+                                        {% endif %}
+                                    </form>
+                                    <form method="POST" action="{{ url_for('admin.delete_staff', staff_id=s.id) }}"
+                                          onsubmit="return confirm('Delete {{ s.name }}?')">
+                                        <button type="submit" class="btn btn-sm btn-outline-danger py-0 px-2" title="Delete">
+                                            <i class="bi bi-trash"></i>
+                                        </button>
+                                    </form>
+                                </div>
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+            {% else %}
+            <div class="empty-state">
+                <i class="bi bi-people"></i>
+                <h5>No staff found</h5>
+            </div>
+            {% endif %}
+        </div>
+    </div>
+</div>
+{% endblock %}
