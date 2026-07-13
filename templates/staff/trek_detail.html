@@ -1,0 +1,191 @@
+{% extends "base.html" %}
+{% block title %}Manage: {{ trek.name }}{% endblock %}
+{% block content %}
+<div class="main-content">
+    <div class="page-header d-flex justify-content-between align-items-center">
+        <div>
+            <h2><i class="bi bi-gear me-2" style="color:var(--sage)"></i>{{ trek.name }}</h2>
+            <nav aria-label="breadcrumb"><ol class="breadcrumb">
+                <li class="breadcrumb-item"><a href="{{ url_for('staff.dashboard') }}" style="color:var(--moss);">Dashboard</a></li>
+                <li class="breadcrumb-item"><a href="{{ url_for('staff.treks') }}" style="color:var(--moss);">My Treks</a></li>
+                <li class="breadcrumb-item active">{{ trek.name[:30] }}</li>
+            </ol></nav>
+        </div>
+        <span class="badge badge-{{ trek.status.lower() }} px-3 py-2" style="font-size:0.9rem;">{{ trek.status }}</span>
+    </div>
+
+    <div class="row g-3">
+        <div class="col-lg-4">
+            <div class="card mb-3">
+                <div class="trek-card-header" style="border-radius:var(--card-radius) var(--card-radius) 0 0;">
+                    <span class="difficulty-tag badge badge-{{ trek.difficulty.lower() }}">{{ trek.difficulty }}</span>
+                    <div style="font-size:0.82rem;opacity:0.8;margin-top:0.5rem;"><i class="bi bi-geo-alt me-1"></i>{{ trek.location }}</div>
+                    {% if trek.altitude %}
+                    <div style="font-size:0.82rem;opacity:0.7;"><i class="bi bi-arrow-up me-1"></i>{{ trek.altitude }}</div>
+                    {% endif %}
+                    <!-- Average Rating -->
+                    <div style="margin-top:8px;font-size:0.85rem;">
+                        {% if trek.review_count > 0 %}
+                            <span style="color:gold;">★</span>
+                            <strong>{{ "%.1f"|format(trek.average_rating) }}/5</strong>
+                            <span style="opacity:.75;">({{ trek.review_count }} reviews)</span>
+                        {% else %}
+                            <span style="opacity:.7;">No reviews yet</span>
+                        {% endif %}
+                    </div>
+                    <div class="slots-bar mt-2">
+                        <div class="slots-fill" style="width:{{ trek.completion_percent }}%"></div>
+                    </div>
+                    <div style="font-size:0.78rem;opacity:0.7;margin-top:4px;">{{ trek.booked_slots }}/{{ trek.total_slots }} slots booked</div>
+                </div>
+                <div class="card-body">
+                    <div class="row g-2 text-center mb-3">
+                        <div class="col-6">
+                            <div style="font-size:0.72rem;color:var(--stone);">Duration</div>
+                            <div style="font-weight:700;color:var(--forest);">{{ trek.duration_days }} days</div>
+                        </div>
+                        <div class="col-6">
+                            <div style="font-size:0.72rem;color:var(--stone);">Available Slots</div>
+                            <div style="font-weight:700;color:var(--moss);">{{ trek.available_slots }}</div>
+                        </div>
+                        {% if trek.start_date %}
+                        <div class="col-12">
+                            <div style="font-size:0.72rem;color:var(--stone);">Dates</div>
+                            <div style="font-weight:600;font-size:0.88rem;color:var(--forest);">
+                                {{ trek.start_date.strftime('%d %b') }}{% if trek.end_date %} – {{ trek.end_date.strftime('%d %b %Y') }}{% endif %}
+                            </div>
+                        </div>
+                        {% endif %}
+                        {% if trek.price > 0 %}
+                        <div class="col-12">
+                            <div style="font-size:0.72rem;color:var(--stone);">Price</div>
+                            <div style="font-weight:700;color:var(--ember);">₹{{ "%.0f"|format(trek.price) }}</div>
+                        </div>
+                        {% endif %}
+                    </div>
+                    {% if trek.description %}
+                    <p style="font-size:0.85rem;color:var(--stone);margin:0;">{{ trek.description[:200] }}{% if trek.description|length > 200 %}...{% endif %}</p>
+                    {% endif %}
+                </div>
+            </div>
+
+            <!-- Update Trek Form -->
+            <div class="card">
+                <div class="card-header">
+                    <h6 class="mb-0" style="font-family:'Playfair Display',serif;">Update Trek</h6>
+                </div>
+                <div class="card-body">
+                    <form method="POST" action="{{ url_for('staff.update_trek', trek_id=trek.id) }}">
+                        <div class="mb-3">
+                            <label class="form-label">Trek Status</label>
+                            <select name="status" class="form-select form-select-sm">
+                                {% for s in ['Open','Closed','Completed'] %}
+                                <option value="{{ s }}" {% if trek.status==s %}selected{% endif %}>{{ s }}</option>
+                                {% endfor %}
+                            </select>
+                        </div>
+                        <div class="mb-3">
+                            <label class="form-label">Total Slots</label>
+                            <input type="number" name="total_slots" class="form-control form-control-sm" value="{{ trek.total_slots }}" min="{{ trek.booked_slots }}" max="999">
+                            <small>Cannot be less than {{ trek.booked_slots }} booked participants.</small>
+                        </div>
+                        <button type="submit" class="btn btn-forest w-100 btn-sm">
+                            <i class="bi bi-check-lg me-1"></i>Update Trek
+                        </button>
+                    </form>
+                </div>
+            </div>
+        </div>
+        <div class="col-lg-8">
+            <div class="card">
+                <div class="card-header d-flex justify-content-between align-items-center">
+                    <h6 class="mb-0" style="font-family:'Playfair Display',serif;">Registered Participants<span class="nav-badge ms-2">{{ bookings|length }}</span></h6>
+                    <a href="{{ url_for('staff.participants', trek_id=trek.id) }}" class="btn btn-sm btn-outline-forest">Full List</a>
+                </div>
+                <div class="card-body p-0">
+                    {% if bookings %}
+                    <div class="table-responsive">
+                        <table class="table mb-0">
+                            <thead>
+                                <tr><th>#</th><th>Trekker</th><th>Contact</th><th>Participants</th><th>Booked On</th><th>Requirements</th></tr>
+                            </thead>
+                            <tbody>
+                                {% for b in bookings %}
+                                <tr>
+                                    <td style="color:var(--stone);font-size:0.8rem;">{{ loop.index }}</td>
+                                    <td>
+                                        <div class="d-flex align-items-center gap-2">
+                                            <div class="avatar" style="width:30px;height:30px;font-size:0.75rem;">{{ b.user.name[0].upper() }}</div>
+                                            <div>
+                                                <div style="font-weight:600;font-size:0.88rem;">{{ b.user.name }}</div>
+                                                {% if b.user.age %}<div style="font-size:0.75rem;color:var(--stone);">Age: {{ b.user.age }}</div>{% endif %}
+                                            </div>
+                                        </div>
+                                    </td>
+                                    <td style="font-size:0.82rem;">
+                                        <div>{{ b.user.email }}</div>
+                                        {% if b.user.phone %}<div style="color:var(--stone);">{{ b.user.phone }}</div>{% endif %}
+                                    </td>
+                                    <td style="font-size:0.88rem;text-align:center;">{{ b.num_participants }}</td>
+                                    <td style="font-size:0.8rem;color:var(--stone);">{{ b.booking_date.strftime('%d %b %Y') }}</td>
+                                    <td style="font-size:0.8rem;color:var(--stone);max-width:150px;">
+                                        {{ b.special_requirements[:40] + '...' if b.special_requirements and b.special_requirements|length > 40 else (b.special_requirements or '—') }}
+                                    </td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                    {% else %}
+                    <div class="empty-state py-4">
+                        <i class="bi bi-people"></i>
+                        <h5>No Participants Yet</h5>
+                        <p style="font-size:0.88rem;">Nobody has booked this trek yet.</p>
+                    </div>
+                    {% endif %}
+                </div>
+            </div>
+            <div class="card mt-3">
+                <div class="card-header d-flex justify-content-between align-items-center">
+                    <h6 class="mb-0"><i class="bi bi-star-fill text-warning me-2"></i>Trek Reviews</h6>
+                    <span class="badge bg-warning text-dark">{{ trek.reviews|length }}</span>
+                </div>
+                <div class="card-body">
+                    {% if trek.reviews %}
+                        {% for review in trek.reviews|sort(attribute='created_at', reverse=True) %}
+                        <div class="border-bottom pb-3 mb-3">
+                            <div class="d-flex justify-content-between">
+                                <strong>{{ review.user.name }}</strong>
+                                <small class="text-muted">{{ review.created_at.strftime('%d %b %Y') }}</small>
+                            </div>
+                            <div class="text-warning mb-2">
+                                {% for i in range(review.rating) %}
+                                    ★
+                                {% endfor %}
+                                {% for i in range(5-review.rating) %}
+                                    ☆
+                                {% endfor %}
+                                <span class="text-dark ms-2">{{ review.rating }}/5</span>
+                            </div>
+                            {% if review.comment %}
+                                <p class="mb-0">{{ review.comment }}</p>
+                            {% else %}
+                                <p class="text-muted mb-0">No written review.</p>
+                            {% endif %}
+                        </div>
+                        {% endfor %}
+                    {% else %}
+                        <div class="text-center py-4">
+                            <i class="bi bi-chat-square-text fs-1 text-muted"></i>
+                            <h6 class="mt-2">No Reviews Yet</h6>
+                            <p class="text-muted mb-0">
+                                Reviews from trekkers will appear here after they complete this trek.
+                            </p>
+                        </div>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
