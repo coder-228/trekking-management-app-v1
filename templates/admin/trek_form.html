@@ -1,0 +1,106 @@
+{% extends "base.html" %}
+{% block title %}{{ 'Edit' if trek else 'Add' }} Trek{% endblock %}
+{% block content %}
+<div class="main-content" style="max-width:860px;">
+    <div class="page-header">
+        <h2><i class="bi bi-{{ 'pencil' if trek else 'plus-circle' }} me-2" style="color:var(--sage)"></i>{{ 'Edit Trek' if trek else 'Create New Trek' }}</h2>
+        <nav aria-label="breadcrumb"><ol class="breadcrumb">
+            <li class="breadcrumb-item"><a href="{{ url_for('admin.dashboard') }}" style="color:var(--moss);">Dashboard</a></li>
+            <li class="breadcrumb-item"><a href="{{ url_for('admin.treks') }}" style="color:var(--moss);">Treks</a></li>
+            <li class="breadcrumb-item active">{{ 'Edit' if trek else 'New' }}</li>
+        </ol></nav>
+    </div>
+
+    <div class="card">
+        <div class="card-header">
+            <h6 class="mb-0" style="font-family:'Playfair Display',serif;">Trek Information</h6>
+        </div>
+        <div class="card-body p-4">
+            <form method="POST">
+                <div class="row g-3">
+                    <div class="col-md-8">
+                        <label class="form-label">Trek Name *</label>
+                        <input type="text" name="name" class="form-control"
+                               value="{{ trek.name if trek else '' }}" placeholder="e.g. Kedarnath Trek" required>
+                    </div>
+                    <div class="col-md-4">
+                        <label class="form-label">Difficulty *</label>
+                        <select name="difficulty" class="form-select" required>
+                            <option value="">Select difficulty</option>
+                            {% for d in ['Easy','Moderate','Hard'] %}
+                            <option value="{{ d }}" {% if trek and trek.difficulty==d %}selected{% endif %}>{{ d }}</option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                    <div class="col-md-6">
+                        <label class="form-label">Location *</label>
+                        <input type="text" name="location" class="form-control"
+                               value="{{ trek.location if trek else '' }}" placeholder="e.g. Uttarakhand, India" required>
+                    </div>
+                    <div class="col-md-3">
+                        <label class="form-label">Duration (days) *</label>
+                        <input type="number" name="duration_days" class="form-control" min="1" max="365"
+                               value="{{ trek.duration_days if trek else '' }}" required>
+                    </div>
+                    <div class="col-md-3">
+                        <label class="form-label">Altitude</label>
+                        <input type="text" name="altitude" class="form-control"
+                               value="{{ trek.altitude if trek else '' }}" placeholder="e.g. 3583m">
+                    </div>
+                    <div class="col-12">
+                        <label class="form-label">Description</label>
+                        <textarea name="description" class="form-control" rows="3"
+                                  placeholder="Describe the trek route, highlights, requirements...">{{ trek.description if trek else '' }}</textarea>
+                    </div>
+                    <div class="col-md-3">
+                        <label class="form-label">Total Slots *</label>
+                        <input type="number" name="total_slots" class="form-control" min="1"
+                               value="{{ trek.total_slots if trek else '' }}" required>
+                    </div>
+                    <div class="col-md-3">
+                        <label class="form-label">Price (₹)</label>
+                        <input type="number" name="price" class="form-control" min="0" step="100"
+                               value="{{ trek.price|int if trek else '0' }}" placeholder="0">
+                    </div>
+                    <div class="col-md-3">
+                        <label class="form-label">Start Date</label>
+                        <input type="date" name="start_date" class="form-control"
+                               value="{{ trek.start_date.strftime('%Y-%m-%d') if trek and trek.start_date else '' }}">
+                    </div>
+                    <div class="col-md-3">
+                        <label class="form-label">End Date</label>
+                        <input type="date" name="end_date" class="form-control"
+                               value="{{ trek.end_date.strftime('%Y-%m-%d') if trek and trek.end_date else '' }}">
+                    </div>
+                    <div class="col-md-6">
+                        <label class="form-label">Assign Staff</label>
+                        <select name="staff_id" class="form-select">
+                            <option value="">-- No Staff Assigned --</option>
+                            {% for s in staff_list %}
+                            <option value="{{ s.id }}" {% if trek and trek.staff_id==s.id %}selected{% endif %}>
+                                {{ s.name }} (@{{ s.username }})
+                            </option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                    <div class="col-md-6">
+                        <label class="form-label">Status</label>
+                        <select name="status" class="form-select">
+                            {% for s in ['Pending','Approved','Open','Closed','Completed'] %}
+                            <option value="{{ s }}" {% if trek and trek.status==s %}selected{% elif not trek and s=='Pending' %}selected{% endif %}>{{ s }}</option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                </div>
+
+                <div class="d-flex gap-2 mt-4 pt-3" style="border-top:1px solid rgba(26,61,43,0.08);">
+                    <button type="submit" class="btn btn-forest px-4">
+                        <i class="bi bi-check-lg me-1"></i>{{ 'Update Trek' if trek else 'Create Trek' }}
+                    </button>
+                    <a href="{{ url_for('admin.treks') }}" class="btn btn-outline-secondary px-4">Cancel</a>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+{% endblock %}

@@ -1,0 +1,93 @@
+{% extends "base.html" %}
+{% block title %}Manage Users{% endblock %}
+{% block content %}
+<div class="main-content">
+    <div class="page-header">
+        <h2><i class="bi bi-person-lines-fill me-2" style="color:var(--sage)"></i>Manage Trekkers</h2>
+        <nav aria-label="breadcrumb"><ol class="breadcrumb">
+            <li class="breadcrumb-item"><a href="{{ url_for('admin.dashboard') }}" style="color:var(--moss);">Dashboard</a></li>
+            <li class="breadcrumb-item active">Users</li>
+        </ol></nav>
+    </div>
+
+    <div class="card mb-3">
+        <div class="card-body py-3">
+            <form method="GET" class="row g-2 align-items-end">
+                <div class="col-md-8">
+                    <div class="search-bar">
+                        <i class="bi bi-search"></i>
+                        <input type="text" name="search" class="form-control"
+                               placeholder="Search by name, username or email..." value="{{ search }}">
+                    </div>
+                </div>
+                <div class="col-md-4 d-flex gap-2">
+                    <button type="submit" class="btn btn-forest flex-fill"><i class="bi bi-search me-1"></i>Search</button>
+                    <a href="{{ url_for('admin.users') }}" class="btn btn-outline-secondary"><i class="bi bi-x-lg"></i></a>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <div class="card">
+        <div class="card-header"><span style="font-weight:600;">{{ users|length }} user(s)</span></div>
+        <div class="card-body p-0">
+            {% if users %}
+            <div class="table-responsive">
+                <table class="table mb-0">
+                    <thead>
+                        <tr><th>ID</th><th>User</th><th>Contact</th><th>Age</th><th>Bookings</th><th>Joined</th><th>Status</th><th>Actions</th></tr>
+                    </thead>
+                    <tbody>
+                        {% for u in users %}
+                        <tr>
+                            <td style="color:var(--stone);font-size:0.8rem;">#{{ u.id }}</td>
+                            <td>
+                                <div class="d-flex align-items-center gap-2">
+                                    <div class="avatar">{{ u.name[0].upper() }}</div>
+                                    <div>
+                                        <div style="font-weight:600;font-size:0.9rem;">{{ u.name }}</div>
+                                        <div style="font-size:0.78rem;color:var(--stone);">@{{ u.username }}</div>
+                                    </div>
+                                </div>
+                            </td>
+                            <td style="font-size:0.85rem;">
+                                <div>{{ u.email }}</div>
+                                {% if u.phone %}<div style="color:var(--stone);">{{ u.phone }}</div>{% endif %}
+                            </td>
+                            <td style="font-size:0.85rem;">{{ u.age or '—' }}</td>
+                            <td>
+                                <span style="font-weight:600;color:var(--moss);">{{ u.bookings|length }}</span>
+                                <span style="font-size:0.8rem;color:var(--stone);"> booking(s)</span>
+                            </td>
+                            <td style="font-size:0.82rem;color:var(--stone);">{{ u.created_at.strftime('%d %b %Y') }}</td>
+                            <td>
+                                <span class="badge px-2 {% if u.status=='active' %}badge-open{% else %}badge-closed{% endif %}">
+                                    {{ u.status.capitalize() }}
+                                </span>
+                            </td>
+                            <td>
+                                <form method="POST" action="{{ url_for('admin.toggle_user_status', user_id=u.id) }}">
+                                    <button type="submit"
+                                            class="btn btn-sm py-0 px-2 {% if u.status=='active' %}btn-outline-warning{% else %}btn-outline-success{% endif %}"
+                                            title="{{ 'Blacklist' if u.status=='active' else 'Activate' }}"
+                                            onclick="return confirm('{{ 'Blacklist' if u.status=='active' else 'Activate' }} {{ u.name }}?')">
+                                        <i class="bi bi-{% if u.status=='active' %}slash-circle{% else %}check-circle{% endif %}"></i>
+                                        {{ 'Blacklist' if u.status=='active' else 'Activate' }}
+                                    </button>
+                                </form>
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+            {% else %}
+            <div class="empty-state">
+                <i class="bi bi-people"></i>
+                <h5>No users found</h5>
+            </div>
+            {% endif %}
+        </div>
+    </div>
+</div>
+{% endblock %}
