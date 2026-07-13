@@ -1,0 +1,126 @@
+{% extends "base.html" %}
+{% block title %}My Dashboard{% endblock %}
+{% block content %}
+<div class="main-content">
+    <!-- Hero Banner -->
+    <div style="background:linear-gradient(135deg,var(--forest),var(--moss));border-radius:var(--card-radius);padding:2rem;margin-bottom:1.5rem;color:white;position:relative;overflow:hidden;">
+        <div style="position:absolute;right:-20px;bottom:-20px;opacity:0.08;font-size:10rem;"><i class="bi bi-triangle-fill"></i></div>
+        <h3 style="font-family:'Playfair Display',serif;margin-bottom:0.25rem;">Welcome back, {{ current_user.name.split()[0] }}! 🏔️</h3>
+        <p style="opacity:0.8;margin-bottom:1.5rem;">Ready for your next summit adventure?</p>
+        <a href="{{ url_for('user.treks') }}" class="btn btn-sm"
+           style="background:var(--sage);color:white;border-radius:8px;padding:8px 20px;font-weight:600;">
+            <i class="bi bi-binoculars me-2"></i>Explore Open Treks
+        </a>
+    </div>
+
+    <div class="row g-3 mb-4">
+        <div class="col-6 col-md-3">
+            <div class="stat-card forest">
+                <div class="stat-num">{{ my_bookings|length }}</div>
+                <div class="stat-label">Total Bookings</div>
+                <i class="bi bi-journal-check stat-icon"></i>
+            </div>
+        </div>
+        <div class="col-6 col-md-3">
+            <div class="stat-card sage">
+                <div class="stat-num">{{ active_bookings|length }}</div>
+                <div class="stat-label">Active Treks</div>
+                <i class="bi bi-check-circle stat-icon"></i>
+            </div>
+        </div>
+        <div class="col-6 col-md-3">
+            <div class="stat-card gold">
+                <div class="stat-num">{{ my_bookings|selectattr('status','equalto','Completed')|list|length }}</div>
+                <div class="stat-label">Completed</div>
+                <i class="bi bi-trophy stat-icon"></i>
+            </div>
+        </div>
+        <div class="col-6 col-md-3">
+            <div class="stat-card ember">
+                <div class="stat-num">{{ open_treks|length }}</div>
+                <div class="stat-label">Open Treks</div>
+                <i class="bi bi-map stat-icon"></i>
+            </div>
+        </div>
+    </div>
+
+    <div class="row g-3">
+        <div class="col-lg-7">
+            <div class="card">
+                <div class="card-header d-flex justify-content-between align-items-center">
+                    <h6 class="mb-0" style="font-family:'Playfair Display',serif;">My Bookings</h6>
+                    <a href="{{ url_for('user.bookings') }}" class="btn btn-sm btn-outline-forest">View All</a>
+                </div>
+                <div class="card-body p-0">
+                    {% if active_bookings %}
+                    <div class="table-responsive">
+                        <table class="table mb-0">
+                            <thead><tr><th>Trek</th><th>Date</th><th>Participants</th><th>Status</th></tr></thead>
+                            <tbody>
+                                {% for b in active_bookings[:5] %}
+                                <tr>
+                                    <td>
+                                        <div style="font-weight:600;font-size:0.88rem;">{{ b.trek.name }}</div>
+                                        <div style="font-size:0.78rem;color:var(--stone);">
+                                            <span class="badge badge-{{ b.trek.difficulty.lower() }}" style="font-size:0.68rem;">{{ b.trek.difficulty }}</span>
+                                            {{ b.trek.location }}
+                                        </div>
+                                    </td>
+                                    <td style="font-size:0.82rem;color:var(--stone);">{{ b.booking_date.strftime('%d %b %Y') }}</td>
+                                    <td style="font-size:0.88rem;text-align:center;">{{ b.num_participants }}</td>
+                                    <td><span class="badge badge-booked px-2">Booked</span></td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                    {% else %}
+                    <div class="empty-state py-4">
+                        <i class="bi bi-journal"></i>
+                        <h5>No Active Bookings</h5>
+                        <a href="{{ url_for('user.treks') }}" class="btn btn-forest btn-sm mt-2">Browse Treks</a>
+                    </div>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+        <div class="col-lg-5">
+            <div class="card">
+                <div class="card-header d-flex justify-content-between align-items-center">
+                    <h6 class="mb-0" style="font-family:'Playfair Display',serif;">Upcoming Treks</h6>
+                    <a href="{{ url_for('user.treks') }}" class="btn btn-sm btn-outline-forest">Explore</a>
+                </div>
+                <div class="card-body p-0">
+                    {% if open_treks %}
+                    {% for trek in open_treks %}
+                    <div style="padding:0.85rem 1.25rem;border-bottom:1px solid rgba(26,61,43,0.05);">
+                        <div class="d-flex justify-content-between align-items-start">
+                            <div>
+                                <div style="font-weight:600;font-size:0.88rem;">{{ trek.name }}</div>
+                                <div style="font-size:0.78rem;color:var(--stone);">
+                                    <i class="bi bi-geo-alt me-1"></i>{{ trek.location }}
+                                    <span class="ms-2"><i class="bi bi-calendar me-1"></i>{{ trek.duration_days }}d</span>
+                                </div>
+                            </div>
+                            <div class="d-flex flex-column align-items-end gap-1">
+                                <span class="badge badge-{{ trek.difficulty.lower() }}" style="font-size:0.7rem;">{{ trek.difficulty }}</span>
+                                {% if trek.price > 0 %}
+                                <span style="font-size:0.78rem;color:var(--ember);font-weight:600;">₹{{ "%.0f"|format(trek.price) }}</span>
+                                {% endif %}
+                            </div>
+                        </div>
+                        <div class="d-flex justify-content-between align-items-center mt-2">
+                            <div style="font-size:0.75rem;color:var(--stone);">{{ trek.available_slots }} slots left</div>
+                            <a href="{{ url_for('user.trek_detail', trek_id=trek.id) }}" class="btn btn-sm btn-forest py-0 px-3" style="font-size:0.78rem;">Book</a>
+                        </div>
+                    </div>
+                    {% endfor %}
+                    {% else %}
+                    <div class="empty-state py-4"><i class="bi bi-map"></i><h5>No Open Treks</h5></div>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
