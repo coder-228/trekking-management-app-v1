@@ -6,6 +6,8 @@ from models import Trek, Booking, User, Review
 from datetime import datetime
 
 staff_bp = Blueprint('staff', __name__)
+
+
 def staff_required(f):
     @wraps(f)
     def decorated(*args, **kwargs):
@@ -14,6 +16,7 @@ def staff_required(f):
             return redirect(url_for('auth.login'))
         return f(*args, **kwargs)
     return decorated
+
 
 @staff_bp.route('/dashboard')
 @login_required
@@ -63,7 +66,14 @@ def update_trek(trek_id):
     new_status = request.form.get('status', '')
     new_total = request.form.get('total_slots', '')
 
-    if new_status and new_status in ['Open', 'Closed', 'Completed']:
+    if new_status:
+        allowed = ['Open', 'Closed', 'Completed']
+        if new_status not in allowed:
+            flash('Invalid status.', 'danger')
+            return redirect(url_for('staff.trek_detail', trek_id=trek_id))
+        if trek.status == 'Completed':
+            flash('Cannot change status of a completed trek.', 'danger')
+            return redirect(url_for('staff.trek_detail', trek_id=trek_id))
         trek.status = new_status
 
     if new_total and new_total.isdigit():
@@ -74,6 +84,7 @@ def update_trek(trek_id):
             return redirect(url_for('staff.trek_detail', trek_id=trek_id))
         trek.total_slots = total
         trek.available_slots = total - booked
+
     trek.updated_at = datetime.utcnow()
     db.session.commit()
     flash('Trek updated successfully!', 'success')
@@ -115,15 +126,9 @@ def edit_profile():
         if new_password:
             if len(new_password) < 6:
                 flash("Password must be at least 6 characters.", "danger")
-                return render_template(
-                    "staff/edit_profile.html",
-                    staff=current_user
-                )
-
+                return render_template("staff/edit_profile.html", staff=current_user)
             current_user.set_password(new_password)
-
         db.session.commit()
         flash("Profile updated successfully!", "success")
         return redirect(url_for("staff.profile"))
-
     return render_template("staff/edit_profile.html",staff=current_user)
