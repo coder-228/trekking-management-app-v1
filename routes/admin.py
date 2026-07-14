@@ -91,14 +91,18 @@ def treks():
 
     query = Trek.query
     if search:
-        query = query.filter(Trek.name.ilike(f'%{search}%') | Trek.location.ilike(f'%{search}%'))
+        query = query.filter(
+            Trek.name.ilike(f'%{search}%') | Trek.location.ilike(f'%{search}%')
+        )
     if difficulty:
         query = query.filter_by(difficulty=difficulty)
     if status:
         query = query.filter_by(status=status)
+
     treks = query.order_by(Trek.created_at.desc()).all()
     all_staff = Staff.query.filter_by(status='active').all()
-    return render_template('admin/treks.html', treks=treks, staff_list=all_staff, search=search, difficulty=difficulty, status=status)
+    return render_template('admin/treks.html', treks=treks, staff_list=all_staff,
+                           search=search, difficulty=difficulty, status=status)
 
 
 @admin_bp.route('/treks/add', methods=['GET', 'POST'])
@@ -126,18 +130,21 @@ def add_trek():
         if not difficulty: errors.append('Difficulty is required.')
         if not duration_days or not duration_days.isdigit(): errors.append('Valid duration required.')
         if not total_slots or not total_slots.isdigit(): errors.append('Valid total slots required.')
+
         if errors:
             for e in errors: flash(e, 'danger')
             return render_template('admin/trek_form.html', staff_list=all_staff, trek=None)
 
-        trek = Trek(name=name, location=location, description=description,
+        trek = Trek(
+            name=name, location=location, description=description,
             difficulty=difficulty, duration_days=int(duration_days),
             total_slots=int(total_slots), available_slots=int(total_slots),
             price=float(price) if price else 0.0,
             altitude=altitude, status=status,
             start_date=datetime.strptime(start_date, '%Y-%m-%d').date() if start_date else None,
             end_date=datetime.strptime(end_date, '%Y-%m-%d').date() if end_date else None,
-            staff_id=int(staff_id) if staff_id else None)
+            staff_id=int(staff_id) if staff_id else None
+        )
         db.session.add(trek)
         db.session.commit()
         flash(f'Trek "{name}" created successfully!', 'success')
@@ -164,6 +171,10 @@ def edit_trek(trek_id):
         trek.altitude = request.form.get('altitude', '').strip()
         old_status = trek.status
         new_status = request.form.get('status', 'Pending')
+        staff_id = request.form.get('staff_id', '')
+        if new_status == "Open" and not staff_id:
+            flash("Please assign a staff member before opening the trek.", "danger")
+            return render_template('admin/trek_form.html',trek=trek, staff_list=all_staff)
         trek.status = new_status
         if old_status != "Completed" and new_status == "Completed":
             for booking in trek.bookings:
@@ -183,6 +194,7 @@ def edit_trek(trek_id):
                 return render_template('admin/trek_form.html', trek=trek, staff_list=all_staff)
             trek.total_slots = new_total
             trek.available_slots = new_total - booked
+
         trek.start_date = datetime.strptime(start_date, '%Y-%m-%d').date() if start_date else None
         trek.end_date = datetime.strptime(end_date, '%Y-%m-%d').date() if end_date else None
         trek.staff_id = int(staff_id) if staff_id else None
@@ -223,6 +235,7 @@ def assign_staff(trek_id):
 @admin_required
 def staff():
     search = request.args.get('search', '').strip()
+    #query = Staff.query.filter_by(status='active')
     query = Staff.query
     if search:
         query = query.filter(
@@ -230,6 +243,7 @@ def staff():
         )
     staff_list = query.order_by(Staff.created_at.desc()).all()
     return render_template('admin/staff.html', staff_list=staff_list, search=search)
+
 
 @admin_bp.route('/staff/pending')
 @login_required
@@ -284,6 +298,7 @@ def users():
         )
     users = query.order_by(User.created_at.desc()).all()
     return render_template('admin/users.html', users=users, search=search)
+
 
 @admin_bp.route('/users/<int:user_id>/toggle_status', methods=['POST'])
 @login_required
